@@ -50,35 +50,83 @@ logger.debug("Using config:\n%s", json.dumps(config, sort_keys=True, indent=4))
 ############################################################
 
 def remove_hidden():
-    hidden = 0
-    deleted = 0
+    hidden_files = 0
+    hidden_folders = 0
+    deleted_files = 0
+    deleted_folders = 0
     logger.debug("Checking %r", config['unionfs_folder'])
     for path, subdirs, files in os.walk(config['unionfs_folder']):
         for name in files:
             file = os.path.join(path, name)
             if file and file.endswith('_HIDDEN~'):
-                hidden += 1
+                hidden_files += 1
                 logger.debug("Hidden file found: %r", file)
                 cloud_path = file.replace(config['unionfs_folder'], config['cloud_folder']).rstrip('_HIDDEN~')
+                cloud_path2 = file.replace(config['unionfs_folder'], config['cloud_folder2']).rstrip('_HIDDEN~')
                 remote_path = file.replace(config['unionfs_folder'], config['remote_folder']).rstrip('_HIDDEN~')
+                remote_path2 = file.replace(config['unionfs_folder'], config['remote_folder2']).rstrip('_HIDDEN~')
                 if os.path.exists(cloud_path):
-                    logger.debug("Removing %r", remote_path)
+                    logger.debug("Removing file %r", remote_path)
                     if utils.rclone_delete(remote_path, config['dry_run']):
-                        deleted += 1
-                        logger.debug("Deleted %r", remote_path)
-                        if not config['dry_run']:
-                            try:
-                                os.remove(file)
-                            except Exception as ex:
-                                logger.exception("Exception removing _HIDDEN~ file %s: ", file)
+                        deleted_files += 1
+                        logger.debug("Deleted file %r", remote_path)
                     else:
-                        logger.debug("Failed to delete %r", remote_path)
+                        logger.debug("Failed to delete file %r", remote_path)
+                if os.path.exists(cloud_path2):
+                    logger.debug("Removing file %r", remote_path2)
+                    if utils.rclone_delete(remote_path2, config['dry_run']):
+                        deleted_files += 1
+                        logger.debug("Deleted file %r", remote_path2)
+                    else:
+                        logger.debug("Failed to delete file %r", remote_path2)
+                if os.path.exists(cloud_path) or os.path.exists(cloud_path2):
+                    if not config['dry_run']:
+                        try:
+                            os.remove(file)
+                        except Exception as ex:
+                            logger.exception("Exception removing _HIDDEN~ file %s: ", file)
                 else:
                     logger.debug("File does not exist on remote, removing %r", file)
                     if not config['dry_run']:
                         os.remove(file)
 
-    logger.debug("Found %d hidden file(s), deleted %d file(s) off remote", hidden, deleted)
+        for name in subdirs:
+            folder = os.path.join(path, name)
+            if folder and folder.endswith('_HIDDEN~'):
+                hidden_folders += 1
+                logger.debug("Hidden folder found: %r", folder)
+                cloud_path = folder.replace(config['unionfs_folder'], config['cloud_folder']).rstrip('_HIDDEN~')
+                cloud_path2 = folder.replace(config['unionfs_folder'], config['cloud_folder2']).rstrip('_HIDDEN~')
+                remote_path = folder.replace(config['unionfs_folder'], config['remote_folder']).rstrip('_HIDDEN~')
+                remote_path2 = folder.replace(config['unionfs_folder'], config['remote_folder2']).rstrip('_HIDDEN~')
+                if os.path.exists(cloud_path):
+                    logger.debug("Removing folder %r", remote_path)
+                    if utils.rclone_rmdir(remote_path, config['dry_run']):
+                        deleted_folders += 1
+                        logger.debug("Deleted folder %r", remote_path)
+                    else:
+                        logger.debug("Failed to delete folder %r", remote_path)
+                if os.path.exists(cloud_path2):
+                    logger.debug("Removing folder %r", remote_path2)
+                    if utils.rclone_rmdir(remote_path2, config['dry_run']):
+                        deleted_folders += 1
+                        logger.debug("Deleted folder %r", remote_path2)
+                    else:
+                        logger.debug("Failed to delete file %r", remote_path2)
+                if os.path.exists(cloud_path) or os.path.exists(cloud_path2):
+                    if not config['dry_run']:
+                        try:
+                            os.rmdir(folder)
+                        except Exception as ex:
+                            logger.exception("Exception removing _HIDDEN~ folder %s: ", file)
+                else:
+                    logger.debug("Folder does not exist on remote, removing %r", file)
+                    if not config['dry_run']:
+                        os.rmdir(folder)
+
+
+    logger.debug("Found %d hidden file(s), deleted %d file(s) off remote", hidden_files, deleted_files)
+    logger.debug("Found %d hidden folder(s), deleted %d folder(s) off remote", hidden_folders, deleted_folders)
 
 
 ############################################################

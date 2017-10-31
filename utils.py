@@ -109,6 +109,22 @@ def rclone_delete(path, dry_run):
         logger.exception("Exception deleting %r: ", path)
         return False
 
+def rclone_rmdir(path, dry_run):
+    try:
+        cmd = 'rclone rmdir %s --drive-use-trash' % cmd_quote(path)
+        if dry_run:
+            cmd += ' --dry-run'
+        process = os.popen(cmd)
+        data = process.read()
+        process.close()
+        if 'Failed to delete' in data:
+            return False
+        else:
+            return True
+    except Exception as ex:
+        logger.exception("Exception deleting %r: ", path)
+        return False
+
 
 def file_excluded(path, excludes):
     excluded = False
@@ -222,10 +238,12 @@ base_config = {
     'unionfs_folder': '/mnt/local/.unionfs-fuse',  # .unionfs location inside unionfs read/write folder
     'remote_folder': 'google:',  # rclone remote
     'cloud_folder': '/mnt/plexdrive',  # mount location of read/write folder
+    'cloud_folder2': '',  # mount location of read/write folder
     'local_folder': '/mnt/local/Media',  # local folder to upload when size reaches local_folder_size
     'local_remote': 'google:/Media',  # remote folder location of local_folder
+    'local_remote2': '',  # remote folder location of local_folder
     'local_folder_size': 250,  # max size of local_folder in gigabytes before moving content
-    'local_folder_check_interval': 60,  # minutes to check size of local_folder
+    'local_folder_check_interval': 30,  # minutes to check size of local_folder
     'du_excludes': [
         # folders to be excluded for the du -s --block-side=1G "local_folder" e.g "downloads"
     ],
