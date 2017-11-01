@@ -237,6 +237,7 @@ config_path = os.path.join(os.path.dirname(sys.argv[0]), 'config.json')
 base_config = {
     'unionfs_folder': '/mnt/local/.unionfs-fuse',  # .unionfs location inside unionfs read/write folder
     'remote_folder': 'google:',  # rclone remote
+    'remote_folder2': '',  # rclone remote
     'cloud_folder': '/mnt/plexdrive',  # mount location of read/write folder
     'cloud_folder2': '',  # mount location of read/write folder
     'local_folder': '/mnt/local/Media',  # local folder to upload when size reaches local_folder_size
