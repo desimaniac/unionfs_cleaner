@@ -242,7 +242,6 @@ base_config = {
     'cloud_folder2': '',  # mount location of read/write folder
     'local_folder': '/mnt/local/Media',  # local folder to upload when size reaches local_folder_size
     'local_remote': 'google:/Media',  # remote folder location of local_folder
-    'local_remote2': '',  # remote folder location of local_folder
     'local_folder_size': 250,  # max size of local_folder in gigabytes before moving content
     'local_folder_check_interval': 30,  # minutes to check size of local_folder
     'du_excludes': [
