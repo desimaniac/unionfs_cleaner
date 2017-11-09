@@ -16,7 +16,7 @@ logger = logging.getLogger("UTILS")
 logger.setLevel(logging.DEBUG)
 
 rate_limits_seen = 0
-
+insufficient_space_seen = 0
 
 ############################################################
 # SCRIPT STUFF
@@ -51,6 +51,7 @@ def get_num(x):
 
 def run_command(command, cfg=None):
     global rate_limits_seen
+    global insufficient_space_seen
 
     process = subprocess.Popen(shlex.split(command), shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     while True:
@@ -73,6 +74,24 @@ def run_command(command, cfg=None):
                     if cfg['pushover_app_token'] and cfg['pushover_user_token']:
                         send_pushover(cfg['pushover_app_token'], cfg['pushover_user_token'],
                                       "Upload was cancelled due to Error 403 rate limits. local_folder_"
+                                      "check_interval has been set to %d minutes." %
+                                      cfg['local_folder_check_interval'])
+
+
+            if cfg and 'upload failed: path/insufficient_space' in output:
+                if insufficient_space_seen <= 4:
+                    insufficient_space_seen += 1
+                else:
+                    logger.error("Insufficient space error detected 5 times, cancelling upload...")
+                    process.kill()
+                    insufficient_space_seen = 0
+                    cfg['local_folder_check_interval'] = 360
+                    logger.info("Set local_folder_check_interval to %d mins because of insufficient_space",
+                                cfg['local_folder_check_interval'])
+                    # send cancelled notification
+                    if cfg['pushover_app_token'] and cfg['pushover_user_token']:
+                        send_pushover(cfg['pushover_app_token'], cfg['pushover_user_token'],
+                                      "Upload was cancelled due to insufficient space. local_folder_"
                                       "check_interval has been set to %d minutes." %
                                       cfg['local_folder_check_interval'])
 
